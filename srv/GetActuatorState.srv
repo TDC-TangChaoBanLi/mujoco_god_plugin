@@ -1,0 +1,9 @@
+# Read the control input and derived state of MuJoCo actuators.
+
+# Actuator names to report. An empty list reports every actuator of the model.
+string[] names
+
+---
+bool success
+string message
+mujoco_god_plugin/ActuatorStateArray state

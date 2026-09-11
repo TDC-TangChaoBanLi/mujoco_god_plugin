@@ -1,0 +1,21 @@
+# Directly set the pose of one MuJoCo object.
+#
+# Only objects that can actually move are accepted: a `body` must be driven by a free
+# joint, and for a `site` / `geom` the plugin resolves the rigid body it belongs to and
+# back-computes the body pose that puts the site/geom on the requested pose (the body
+# must be free as well).  Absolute writes to joint-driven bodies are rejected.
+#
+# `pose.header.frame_id` selects the reference frame: empty means the world frame,
+# otherwise the name of a MuJoCo body the pose is expressed in.
+
+string type
+string name
+geometry_msgs/PoseStamped pose
+
+# When true the object is teleported immediately; when false the caller is expected to
+# use the action variant for a smooth interpolation.
+bool immediate
+
+---
+bool success
+string message

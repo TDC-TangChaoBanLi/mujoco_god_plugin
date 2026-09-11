@@ -1,0 +1,17 @@
+# Directly set the control input of MuJoCo actuators.
+#
+# `values` must be either empty (then nothing is written) or the same length as `names`.
+# When `hold` is true the plugin re-applies the value on every physics step, which wins
+# over whatever the ros2_control controllers stage each cycle; otherwise the value is
+# applied for a single step and the controllers take over again.
+
+string[] names
+float64[] values
+
+# Keep overriding the actuator control inputs until `clear` is called (or the plugin is
+# reset).
+bool hold
+
+---
+bool success
+string message

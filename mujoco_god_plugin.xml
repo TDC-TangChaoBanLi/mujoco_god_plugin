@@ -1,0 +1,12 @@
+<library path="mujoco_god_plugin_impl">
+  <class name="mujoco_god_plugin/GodPlugin"
+         type="mujoco_god_plugin::GodPlugin"
+         base_class_type="mujoco_ros2_control_plugins::MuJoCoROS2ControlPluginBase">
+    <description>
+      Direct read/write access to the MuJoCo simulation state.  Publishes object poses
+      (~/pose/&lt;type&gt;/&lt;name&gt;), joint states (~/joint_states) and actuator states
+      (~/actuator_state), and exposes services/actions to set object poses and actuator
+      control inputs plus a service to read them back.
+    </description>
+  </class>
+</library>

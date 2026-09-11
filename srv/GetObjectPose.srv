@@ -1,0 +1,17 @@
+# Read the pose of one MuJoCo object.
+#
+# `type` is one of "body", "site", "geom" (case insensitive).
+
+string type
+string name
+
+# Optional reference frame: the name of a MuJoCo body to express the pose in.
+# Empty -> world frame.
+string frame_id
+
+---
+bool success
+string message
+
+# Pose of the object, in `frame_id` (or the world frame when empty).
+geometry_msgs/PoseStamped pose

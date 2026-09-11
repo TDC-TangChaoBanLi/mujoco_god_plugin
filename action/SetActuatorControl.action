@@ -1,0 +1,17 @@
+# Goal: ramp one or more actuator control inputs to a target value.
+string[] names
+float64[] values
+
+# Ramp time [s]. 0 means "apply immediately".
+float64 ramp_duration
+
+# Keep overriding the control inputs after the ramp finished.
+bool hold
+---
+# Result
+bool success
+string message
+---
+# Feedback
+float64 progress
+mujoco_god_plugin/ActuatorStateArray current

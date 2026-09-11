@@ -1,0 +1,9 @@
+# Read the state of MuJoCo joints as a sensor_msgs/JointState.
+
+# Joint names to report. An empty list reports every 1-DoF joint of the model.
+string[] names
+
+---
+bool success
+string message
+sensor_msgs/JointState state

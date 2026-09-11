@@ -1,0 +1,18 @@
+# Goal: smoothly move a free object (site / body / geom) to a target pose.
+#
+# Only objects belonging to a free-joint body can be moved; see srv/SetObjectPose.srv.
+string type
+string name
+geometry_msgs/PoseStamped pose
+
+# Interpolation time [s]. 0 means "teleport".
+float64 duration
+---
+# Result
+bool success
+string message
+---
+# Feedback
+# progress in [0, 1]
+float64 progress
+geometry_msgs/PoseStamped current
