@@ -402,10 +402,10 @@ bool GodPlugin::init(rclcpp::Node::SharedPtr node, const mjModel* model, mjData*
       std::bind(&GodPlugin::handleSetActuatorControlAccepted, this, std::placeholders::_1));
 
   RCLCPP_INFO(logger_,
-              "GodPlugin initialised: %zu tracked object(s), %zu joint(s), %d actuator(s). Topics '%s', '%s'; "
+              "GodPlugin initialised: %zu tracked object(s), %zu joint(s), %zu actuator(s). Topics '%s', '%s'; "
               "services get/set_object_pose, get_joint_states, get/set_actuator_control.",
-              objects_.size(), joint_ids_.size(), model_->nu, joint_pub_->get_topic_name(),
-              actuator_pub_->get_topic_name());
+              objects_.size(), joint_ids_.size(), static_cast<size_t>(model_->nu),
+              joint_pub_->get_topic_name(), actuator_pub_->get_topic_name());
   return true;
 }
 
@@ -1124,7 +1124,7 @@ void GodPlugin::pre_step(mjData* data)
   }
 }
 
-void GodPlugin::on_reset(mjData* /*data*/)
+void GodPlugin::on_reset(mjData* data)
 {
   {
     std::lock_guard<std::mutex> wlock(write_mutex_);
@@ -1133,29 +1133,35 @@ void GodPlugin::on_reset(mjData* /*data*/)
     actuator_once_.clear();
     override_dirty_.store(false);
   }
-  std::lock_guard<std::mutex> ilock(interp_mutex_);
-  for (auto& pi : pose_interps_)
   {
-    if (pi.goal && pi.goal->is_active())
+    std::lock_guard<std::mutex> ilock(interp_mutex_);
+    for (auto& pi : pose_interps_)
     {
-      auto res = std::make_shared<SetObjectPose::Result>();
-      res->success = false;
-      res->message = "Aborted by a world reset.";
-      pi.goal->abort(res);
+      if (pi.goal && pi.goal->is_active())
+      {
+        auto res = std::make_shared<SetObjectPose::Result>();
+        res->success = false;
+        res->message = "Aborted by a world reset.";
+        pi.goal->abort(res);
+      }
     }
-  }
-  pose_interps_.clear();
-  for (auto& ar : actuator_ramps_)
-  {
-    if (ar.goal && ar.goal->is_active())
+    pose_interps_.clear();
+    for (auto& ar : actuator_ramps_)
     {
-      auto res = std::make_shared<SetActuatorControl::Result>();
-      res->success = false;
-      res->message = "Aborted by a world reset.";
-      ar.goal->abort(res);
+      if (ar.goal && ar.goal->is_active())
+      {
+        auto res = std::make_shared<SetActuatorControl::Result>();
+        res->success = false;
+        res->message = "Aborted by a world reset.";
+        ar.goal->abort(res);
+      }
     }
+    actuator_ramps_.clear();
   }
-  actuator_ramps_.clear();
+  // Reset services may immediately query poses/joints, before the next periodic
+  // update. Publish a fresh snapshot now instead of returning the pre-reset scene.
+  last_publish_valid_ = false;
+  update(model_, data);
   RCLCPP_INFO(logger_, "GodPlugin state reset.");
 }
 
@@ -1184,4 +1190,3 @@ void GodPlugin::cleanup()
 
 PLUGINLIB_EXPORT_CLASS(mujoco_god_plugin::GodPlugin,
                        mujoco_ros2_control_plugins::MuJoCoROS2ControlPluginBase)
-
