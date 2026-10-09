@@ -20,12 +20,14 @@ find_package(mujoco_ros2_control_plugins REQUIRED)
 set(msg_files
   msg/ActuatorState.msg
   msg/ActuatorStateArray.msg
+  msg/Contact.msg
 )
 
 set(srv_files
   srv/GetObjectPose.srv
   srv/SetObjectPose.srv
   srv/GetJointStates.srv
+  srv/GetContacts.srv
   srv/GetActuatorState.srv
   srv/SetActuatorControl.srv
 )

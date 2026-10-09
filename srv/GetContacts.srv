@@ -1,0 +1,6 @@
+# Read-only query of all contacts in the last simulator snapshot.
+---
+bool success
+string message
+std_msgs/Header header
+mujoco_god_plugin/Contact[] contacts

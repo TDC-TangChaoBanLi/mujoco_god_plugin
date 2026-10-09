@@ -35,6 +35,7 @@
 #include "mujoco_god_plugin/msg/actuator_state_array.hpp"
 #include "mujoco_god_plugin/srv/get_actuator_state.hpp"
 #include "mujoco_god_plugin/srv/get_joint_states.hpp"
+#include "mujoco_god_plugin/srv/get_contacts.hpp"
 #include "mujoco_god_plugin/srv/get_object_pose.hpp"
 #include "mujoco_god_plugin/srv/set_actuator_control.hpp"
 #include "mujoco_god_plugin/srv/set_object_pose.hpp"
@@ -161,6 +162,7 @@ private:
   using GetObjectPoseSrv = mujoco_god_plugin::srv::GetObjectPose;
   using SetObjectPoseSrv = mujoco_god_plugin::srv::SetObjectPose;
   using GetJointStatesSrv = mujoco_god_plugin::srv::GetJointStates;
+  using GetContactsSrv = mujoco_god_plugin::srv::GetContacts;
   using GetActuatorStateSrv = mujoco_god_plugin::srv::GetActuatorState;
   using SetActuatorControlSrv = mujoco_god_plugin::srv::SetActuatorControl;
   using ActuatorStateArrayMsg = mujoco_god_plugin::msg::ActuatorStateArray;
@@ -170,6 +172,8 @@ private:
   void handleSetObjectPose(const SetObjectPoseSrv::Request::SharedPtr req, SetObjectPoseSrv::Response::SharedPtr res);
   void handleGetJointStates(const GetJointStatesSrv::Request::SharedPtr req,
                             GetJointStatesSrv::Response::SharedPtr res);
+  void handleGetContacts(const GetContactsSrv::Request::SharedPtr req,
+                         GetContactsSrv::Response::SharedPtr res);
   void handleGetActuatorState(const GetActuatorStateSrv::Request::SharedPtr req,
                               GetActuatorStateSrv::Response::SharedPtr res);
   void handleSetActuatorControl(const SetActuatorControlSrv::Request::SharedPtr req,
@@ -211,6 +215,7 @@ private:
   rclcpp::Service<GetObjectPoseSrv>::SharedPtr get_pose_srv_;
   rclcpp::Service<SetObjectPoseSrv>::SharedPtr set_pose_srv_;
   rclcpp::Service<GetJointStatesSrv>::SharedPtr get_joints_srv_;
+  rclcpp::Service<GetContactsSrv>::SharedPtr get_contacts_srv_;
   rclcpp::Service<GetActuatorStateSrv>::SharedPtr get_actuators_srv_;
   rclcpp::Service<SetActuatorControlSrv>::SharedPtr set_actuators_srv_;
   rclcpp::Service<std_srvs::srv::Trigger>::SharedPtr clear_actuators_srv_;
@@ -229,6 +234,7 @@ private:
   std::vector<double> actuator_force_;
   sensor_msgs::msg::JointState joint_state_;
   ActuatorStateArrayMsg actuator_state_;
+  std::vector<mujoco_god_plugin::msg::Contact> contacts_;
   bool snapshot_valid_{ false };
 
   // Queued writes, applied in pre_step().

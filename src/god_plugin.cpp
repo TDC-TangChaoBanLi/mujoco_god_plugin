@@ -380,6 +380,9 @@ bool GodPlugin::init(rclcpp::Node::SharedPtr node, const mjModel* model, mjData*
   get_joints_srv_ = node_->create_service<GetJointStatesSrv>(
       "get_joint_states",
       std::bind(&GodPlugin::handleGetJointStates, this, std::placeholders::_1, std::placeholders::_2));
+  get_contacts_srv_ = node_->create_service<GetContactsSrv>(
+      "get_contacts",
+      std::bind(&GodPlugin::handleGetContacts, this, std::placeholders::_1, std::placeholders::_2));
   get_actuators_srv_ = node_->create_service<GetActuatorStateSrv>(
       "get_actuator_state",
       std::bind(&GodPlugin::handleGetActuatorState, this, std::placeholders::_1, std::placeholders::_2));
@@ -627,6 +630,16 @@ void GodPlugin::handleSetObjectPose(const SetObjectPoseSrv::Request::SharedPtr r
   }
   res->success = true;
   res->message = "Pose queued (applied on the next physics step).";
+}
+
+void GodPlugin::handleGetContacts(const GetContactsSrv::Request::SharedPtr,
+                                 GetContactsSrv::Response::SharedPtr res)
+{
+  std::lock_guard<std::mutex> lock(snapshot_mutex_);
+  res->success = snapshot_valid_;
+  res->message = snapshot_valid_ ? "ok" : "simulator snapshot unavailable";
+  res->header = joint_state_.header;
+  if (snapshot_valid_) res->contacts = contacts_;
 }
 
 void GodPlugin::handleGetJointStates(const GetJointStatesSrv::Request::SharedPtr req,
@@ -1034,6 +1047,33 @@ void GodPlugin::update(const mjModel* /*model*/, mjData* data)
   as.header.frame_id = frame_id_;
   buildActuatorState(data, as);
 
+  std::vector<mujoco_god_plugin::msg::Contact> contacts;
+  contacts.reserve(static_cast<size_t>(data->ncon));
+  for (int index = 0; index < data->ncon; ++index)
+  {
+    const auto & source = data->contact[index];
+    mujoco_god_plugin::msg::Contact contact;
+    for (int side = 0; side < 2; ++side)
+    {
+      const int geom = source.geom[side];
+      contact.geom_ids[side] = geom;
+      if (geom >= 0 && geom < model_->ngeom)
+      {
+        const char * name = mj_id2name(model_, mjOBJ_GEOM, geom);
+        contact.geom_names[side] = name ? name : "geom#" + std::to_string(geom);
+        const int body = model_->geom_bodyid[geom];
+        const char * body_name = mj_id2name(model_, mjOBJ_BODY, body);
+        contact.body_names[side] = body_name ? body_name : "body#" + std::to_string(body);
+      }
+    }
+    contact.distance = source.dist;
+    contact.position.x = source.pos[0]; contact.position.y = source.pos[1]; contact.position.z = source.pos[2];
+    contact.normal.x = source.frame[0]; contact.normal.y = source.frame[1]; contact.normal.z = source.frame[2];
+    contact.dimension = static_cast<uint8_t>(source.dim);
+    mj_contactForce(model_, data, index, contact.wrench_contact_frame.data());
+    contacts.push_back(std::move(contact));
+  }
+
   std::vector<double> ctrl(static_cast<size_t>(model_->nu));
   std::vector<double> aforce(static_cast<size_t>(model_->nu));
   for (int i = 0; i < model_->nu; ++i)
@@ -1051,6 +1091,7 @@ void GodPlugin::update(const mjModel* /*model*/, mjData* data)
     actuator_force_ = std::move(aforce);
     joint_state_ = js;
     actuator_state_ = as;
+    contacts_ = std::move(contacts);
     snapshot_valid_ = true;
   }
 
@@ -1178,6 +1219,7 @@ void GodPlugin::cleanup()
   get_pose_srv_.reset();
   set_pose_srv_.reset();
   get_joints_srv_.reset();
+  get_contacts_srv_.reset();
   get_actuators_srv_.reset();
   set_actuators_srv_.reset();
   clear_actuators_srv_.reset();
